@@ -1,0 +1,36 @@
+name: Dagelijkse Mazout Prijs Update
+
+on:
+  schedule:
+    # Elke dag om 09:00 uur Midden-Europese Tijd (07:00 UTC)
+    - cron: '0 7 * * *'
+  workflow_dispatch: # Hiermee kun je het ook handmatig testen via GitHub
+
+jobs:
+  update-price:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code ophalen uit repository
+        uses: actions/checkout@v4
+
+      - name: Python instellen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Afhankelijkheden installeren
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+
+      - name: Mazout data-script uitvoeren
+        run: |
+          python fetch_data.py || python scrape_prijzen.py || true
+
+      - name: Wijzigingen opslaan in GitHub repository
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Auto-update mazoutprijzen [skip ci]"
+          git push
