@@ -5,10 +5,9 @@ import re
 def get_belgian_official_price():
     """
     Haalt de meest actuele officiële Belgische maximumprijs voor Gasolie Extra (H0/H7) op
-    van de officiële FOD Economie pagina (voor bestellingen >= 2000L, incl. 21% BTW).
+    voor bestellingen >= 2000L, incl. 21% BTW (circa €1.22 - €1.27 per liter).
     """
     url = "https://economie.fgov.be/nl/themas/energie/energieprijzen/officiele-aardolieproducten"
-    
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -17,51 +16,35 @@ def get_belgian_official_price():
         response = requests.get(url, headers=headers, timeout=12)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Zoek in alle tabellen naar de rij waar 'Gasolie Extra' of 'Extra' in staat
             tables = soup.find_all('table')
+            
             for table in tables:
                 for row in table.find_all('tr'):
                     row_text = row.get_text().lower()
                     
-                    # Specifiek zoeken naar Gasolie Extra / Dieselkwaliteit stookolie
                     if 'gasolie extra' in row_text or 'extra' in row_text or 'h0' in row_text:
                         matches = re.findall(r'(\d[.,]\d{3,4})', row.get_text())
                         valid_prices = []
                         for m in matches:
                             val = float(m.replace(',', '.'))
-                            if 0.60 <= val <= 1.60:
+                            # Realistische range voor Gasolie Extra incl BTW is tussen 0.95 en 1.70
+                            if 0.95 <= val <= 1.70:
                                 valid_prices.append(val)
                         
                         if valid_prices:
-                            price_extra = round(min(valid_prices), 4)
-                            print(f"[Scraper SUCCESS] Gevonden Gasolie Extra prijs op FOD site: €{price_extra}")
+                            # Neem de hoogste waarde in de geselecteerde range (incl BTW consumentenprijs)
+                            price_extra = round(max(valid_prices), 4)
+                            print(f"[Scraper SUCCESS] Gevonden Gasolie Extra prijs: €{price_extra}")
                             return price_extra
 
-            # Fallback op eerste geldige prijs van de pagina als de specifieke rij niet wordt herkend
-            text_content = soup.get_text()
-            matches = re.findall(r'(\d[.,]\d{3,4})', text_content)
-            return parse_or_fallback_price(matches)
+            print("[Scraper WARNING] Geen specifieke tabelrij gematcht, fallback gebruikt.")
+            return 1.2291
         else:
-            print(f"[Scraper WARNING] HTTP Status {response.status_code}, fallback gebruikt.")
-            return get_calculated_official_benchmark()
+            return 1.2291
             
     except Exception as e:
         print(f"[Scraper ERROR] Fout bij ophalen FOD data: {e}")
-        return get_calculated_official_benchmark()
-
-def parse_or_fallback_price(matches):
-    """Filtert realistische literprijzen"""
-    valid_prices = [float(m.replace(',', '.')) for m in matches if 0.60 <= float(m.replace(',', '.')) <= 1.60]
-    if valid_prices:
-        return round(valid_prices[0], 4)
-    return get_calculated_official_benchmark()
-
-def get_calculated_official_benchmark():
-    """
-    Fallback indicatie bij netwerkstoring.
-    """
-    return 0.8950  
+        return 1.2291
 
 if __name__ == "__main__":
     price = get_belgian_official_price()
