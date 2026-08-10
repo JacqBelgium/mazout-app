@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import sqlite3
 import os
 
@@ -56,6 +56,11 @@ if "date" in df.columns:
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date")
 
+# Bereken de Moving Averages (MA5 en MA20)
+if "official_belgian_price_liter" in df.columns:
+    df["MA5"] = df["official_belgian_price_liter"].rolling(window=5, min_periods=1).mean()
+    df["MA20"] = df["official_belgian_price_liter"].rolling(window=20, min_periods=1).mean()
+
 # ---------------------------------------------------------
 # 3. KPI / METRICS OVERZICHT
 # ---------------------------------------------------------
@@ -65,12 +70,21 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
     latest_row = df.iloc[-1]
     latest_date = latest_row["date"].strftime("%d-%m-%Y") if "date" in df.columns else "Onbekend"
 
+    # Format de trend met nette pijltjes
+    raw_trend = str(latest_row.get('trend', 'N/B')).upper()
+    if "BEARISH" in raw_trend or "DOWN" in raw_trend:
+        formatted_trend = "BEARISH ↘"
+    elif "BULLISH" in raw_trend or "UP" in raw_trend:
+        formatted_trend = "BULLISH ↗"
+    else:
+        formatted_trend = raw_trend
+
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(
             label="🛢️ Officiële Prijs",
-            value=f"€ {latest_row['official_belgian_price_liter']:.3f} / L",
+            value=f"€ {latest_row['official_belgian_price_liter']:.4f} / L",
             help="Officiële Belgische maximumprijs per liter."
         )
 
@@ -84,12 +98,11 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
     with col3:
         st.metric(
             label="📉 Markt Trend",
-            value=str(latest_row.get('trend', 'N/B')),
+            value=formatted_trend,
             help="Huidige verwachte markttrend."
         )
 
     with col4:
-        # Als er een wisselkoers of ruwe olieprijs aanwezig is
         if 'oil_eur_ton' in latest_row and pd.notnull(latest_row['oil_eur_ton']):
             st.metric(
                 label="🌐 Olieprijs (€/Ton)",
@@ -107,25 +120,44 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
     st.divider()
 
     # ---------------------------------------------------------
-    # 4. GRAFIEK SECTIE
+    # 4. GRAFIEK SECTIE (MET MA5 EN MA20)
     # ---------------------------------------------------------
     st.subheader("📈 Prijsverloop Belgische Mazout (€ / Liter)")
 
-    fig = px.line(
-        df, 
-        x="date", 
-        y="official_belgian_price_liter",
-        labels={"date": "Datum", "official_belgian_price_liter": "Prijs (€ / Liter)"},
-        markers=True
-    )
+    fig = go.Figure()
 
-    # Styling van de lijn
-    fig.update_traces(line_color="#0969da", line_width=3)
+    # Hoofdlijn: Dagelijkse Prijs
+    fig.add_trace(go.Scatter(
+        x=df["date"],
+        y=df["official_belgian_price_liter"],
+        mode="lines+markers",
+        name="Officiële Prijs",
+        line=dict(color="#0969da", width=3)
+    ))
+
+    # Trendlijn: 5-daags Gemiddelde (MA5)
+    fig.add_trace(go.Scatter(
+        x=df["date"],
+        y=df["MA5"],
+        mode="lines",
+        name="5-daags Gemiddelde (MA5)",
+        line=dict(color="#ff9900", width=2, dash="dash")
+    ))
+
+    # Trendlijn: 20-daags Gemiddelde (MA20)
+    fig.add_trace(go.Scatter(
+        x=df["date"],
+        y=df["MA20"],
+        mode="lines",
+        name="20-daags Gemiddelde (MA20)",
+        line=dict(color="#28a745", width=2, dash="dot")
+    ))
 
     fig.update_layout(
-        hovermode="x unified", 
+        hovermode="x unified",
         xaxis_title="Datum",
-        yaxis_title="Prijs per Liter (€)"
+        yaxis_title="Prijs per Liter (€)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     
     st.plotly_chart(fig, use_container_width=True)
@@ -154,6 +186,6 @@ else:
 st.info(
     """
     ℹ️ **Over deze gegevens:**
-    Deze applicatie toont de officiële Belgische maximumprijzen voor stookolie, gecombineerd met actuele markttrends en aankoopadviezen.
+    Deze applicatie toont de officiële Belgische maximumprijzen voor stookolie (Gasolie Extra), gecombineerd met 5-daagse en 20-daagse trendlijnen, markttrends en aankoopadviezen.
     """
 )
