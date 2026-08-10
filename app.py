@@ -19,8 +19,8 @@ st.set_page_config(
 DB_FILE = "mazout_data.db"
 
 # Header sectie
-st.title("🛢️ Belgische Mazoutprijs Trends")
-st.caption("Officiële Belgische maximumprijzen (bij bestellingen vanaf 2.000 liter, incl. btw)")
+st.title("🛢️ Belgische Mazoutprijs & Marktadvies")
+st.caption("Officiële Belgische maximumprijs per liter en actuele markttrends")
 
 # 1. Controleer of het databasebestand aanwezig is
 if not os.path.exists(DB_FILE):
@@ -53,34 +53,41 @@ except Exception as e:
     st.error(f"⚠️ Fout bij het uitlezen van de database: {e}")
     st.stop()
 
-# Datums converteren en sorteren
-if "datum" in df.columns:
-    df["datum"] = pd.to_datetime(df["datum"])
-    df = df.sort_values("datum")
+# Datums converteren en sorteren op datum
+if "date" in df.columns:
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.sort_values("date")
 
 # ---------------------------------------------------------
-# 3. KPI / CURRENT PRICES SECTIE
+# 3. MEEST RECENTE PRIJS & ADVIES (KPI's)
 # ---------------------------------------------------------
-st.subheader("📊 Huidige Maximumprijzen")
+st.subheader("📊 Actuele Status")
 
-if "prijs_standaard" in df.columns and "prijs_extra" in df.columns:
+if not df.empty:
     latest_row = df.iloc[-1]
-    latest_date = latest_row["datum"].strftime("%d-%m-%Y") if "datum" in df.columns else "Onbekend"
+    latest_date = latest_row["date"].strftime("%d-%m-%Y") if "date" in df.columns else "Onbekend"
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric(
-            label="🟢 Mazout Standaard (50ppm)",
-            value=f"€ {latest_row['prijs_standaard']:.4f} / L",
-            help="Klassieke stookolie voor standaard branders."
+            label=" Officiële Belgische Prijs",
+            value=f"€ {latest_row['official_belgian_price_liter']:.3f} / L" if 'official_belgian_price_liter' in latest_row else "N/B",
+            help="Officiële maximumprijs per liter in België."
         )
 
     with col2:
         st.metric(
-            label="🔵 Mazout Extra (H0 / H7)",
-            value=f"€ {latest_row['prijs_extra']:.4f} / L",
-            help="Zwavelarme stookolie van dieselkwaliteit voor moderne condensatieketels."
+            label="💡 Advies",
+            value=str(latest_row.get('advice', 'N/B')),
+            help="Aankoopadvies op basis van marktwaarde."
+        )
+
+    with col3:
+        st.metric(
+            label="📉 Markt Trend",
+            value=str(latest_row.get('trend', 'N/B')),
+            help="Verwachte markttrend."
         )
 
     st.caption(f"*Laatst bijgewerkt op: {latest_date}*")
@@ -89,69 +96,41 @@ if "prijs_standaard" in df.columns and "prijs_extra" in df.columns:
     # ---------------------------------------------------------
     # 4. GRAFIEK SECTIE
     # ---------------------------------------------------------
-    st.subheader("📈 Prijsverloop over de Tijd")
+    st.subheader("📈 Prijsverloop Belgische Mazout (€ / Liter)")
 
-    # Omvormen van data naar lang formaat voor Plotly Express
-    df_melted = df.melt(
-        id_vars=["datum"], 
-        value_vars=["prijs_standaard", "prijs_extra"],
-        var_name="Type Stookolie", 
-        value_name="Prijs_per_liter"
-    )
+    if "official_belgian_price_liter" in df.columns and "date" in df.columns:
+        fig = px.line(
+            df, 
+            x="date", 
+            y="official_belgian_price_liter",
+            labels={"date": "Datum", "official_belgian_price_liter": "Prijs (€ / Liter)"},
+            markers=True
+        )
 
-    df_melted["Type Stookolie"] = df_melted["Type Stookolie"].map({
-        "prijs_standaard": "Mazout Standaard (50ppm)",
-        "prijs_extra": "Mazout Extra (H0/H7)"
-    })
+        fig.update_traces(line_color="#0969da", line_width=3)
 
-    fig = px.line(
-        df_melted, 
-        x="datum", 
-        y="Prijs_per_liter", 
-        color="Type Stookolie",
-        color_discrete_map={
-            "Mazout Standaard (50ppm)": "#2ea043",  # Groen
-            "Mazout Extra (H0/H7)": "#0969da"        # Blauw
-        },
-        labels={"datum": "Datum", "Prijs_per_liter": "Prijs (€ / Liter)"}
-    )
-
-    fig.update_layout(
-        hovermode="x unified", 
-        legend_title_text="Soort Mazout",
-        xaxis_title="Datum",
-        yaxis_title="Prijs per Liter (€)"
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            hovermode="x unified", 
+            xaxis_title="Datum",
+            yaxis_title="Prijs per Liter (€)"
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
 
     # ---------------------------------------------------------
     # 5. HISTORISCHE DATATABEL SECTIE
     # ---------------------------------------------------------
     st.divider()
-    with st.expander("📋 Bekijk de volledige prijshistorie in tabelvorm"):
+    with st.expander("📋 Bekijk de volledige historie in tabelvorm"):
         df_display = df.copy()
-        df_display["datum"] = df_display["datum"].dt.strftime("%Y-%m-%d")
+        if "date" in df_display.columns:
+            df_display["date"] = df_display["date"].dt.strftime("%Y-%m-%d")
+        
         st.dataframe(
-            df_display.sort_values("datum", ascending=False), 
+            df_display.sort_values("date", ascending=False), 
             use_container_width=True,
             hide_index=True
         )
 
 else:
-    # Terugvaloptie als de kolomnamen in de database afwijken
-    st.warning("De verwachte kolommen ('prijs_standaard' en 'prijs_extra') zijn niet gevonden in de database.")
-    st.dataframe(df, use_container_width=True)
-
-# ---------------------------------------------------------
-# 6. INFORMATIEBOX EN FOOTER
-# ---------------------------------------------------------
-st.info(
-    """
-    ℹ️ **Verschil tussen de twee types stookolie:**
-    * **Mazout Standaard (50ppm):** De officiële basisprijs voor traditionele stookolie.
-    * **Mazout Extra (H0 / H7):** Zwavelarme stookolie van dieselkwaliteit. 
-    
-    *Let op:* De meeste mazoutleveranciers bieden tegenwoordig standaard **Mazout Extra (H0)** aan op hun website vanwege strengere milieueisen en geschiktheid voor moderne condensatieketels.
-    """
-)
+    st.warning("De database bevat momenteel geen gegevens.")
