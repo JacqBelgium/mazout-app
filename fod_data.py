@@ -24,24 +24,21 @@ def get_belgian_official_price():
                 for row in table.find_all('tr'):
                     row_text = row.get_text().lower()
                     
-                    # We zoeken specifiek naar de Gasolie Extra / Dieselkwaliteit stookolie
+                    # Specifiek zoeken naar Gasolie Extra / Dieselkwaliteit stookolie
                     if 'gasolie extra' in row_text or 'extra' in row_text or 'h0' in row_text:
-                        # Zoek alle prijsgetallen in deze specifieke rij (bijv. 0,8920 of 0.892)
                         matches = re.findall(r'(\d[.,]\d{3,4})', row.get_text())
                         valid_prices = []
                         for m in matches:
                             val = float(m.replace(',', '.'))
-                            # De prijs per liter voor mazout ligt in België realistisch tussen €0.60 en €1.60
                             if 0.60 <= val <= 1.60:
                                 valid_prices.append(val)
                         
                         if valid_prices:
-                            # Pak de prijs voor >= 2000L (is meestal het eerste of laagste tarief in de rij)
                             price_extra = round(min(valid_prices), 4)
                             print(f"[Scraper SUCCESS] Gevonden Gasolie Extra prijs op FOD site: €{price_extra}")
                             return price_extra
 
-            # Als de specifieke rij niet is gevonden, doorzoek de hele pagina op de eerste geldige match
+            # Fallback op eerste geldige prijs van de pagina als de specifieke rij niet wordt herkend
             text_content = soup.get_text()
             matches = re.findall(r'(\d[.,]\d{3,4})', text_content)
             return parse_or_fallback_price(matches)
@@ -64,7 +61,6 @@ def get_calculated_official_benchmark():
     """
     Fallback indicatie bij netwerkstoring.
     """
-    # Een reële gemiddelde marktprijs voor Gasolie Extra (H0)
     return 0.8950  
 
 if __name__ == "__main__":
