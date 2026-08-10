@@ -20,7 +20,7 @@ DB_FILE = "mazout_data.db"
 
 # Header
 st.title("🛢️ Belgische Mazoutprijs & Marktadvies")
-st.caption("Officiële Belgische maximumprijzen per liter (bij bestellingen vanaf 2.000L, incl. btw)")
+st.caption("Officiële Belgische maximumprijs per liter (bij bestellingen vanaf 2.000L, incl. btw)")
 
 # 1. Controleer of het databasebestand aanwezig is
 if not os.path.exists(DB_FILE):
@@ -57,92 +57,73 @@ if "date" in df.columns:
     df = df.sort_values("date")
 
 # ---------------------------------------------------------
-# 3. DATA VERRIJKEN VOOR 2 TYPES STOOKOLIE
+# 3. KPI / METRICS OVERZICHT
 # ---------------------------------------------------------
+st.subheader("📊 Huidige Marktstatus")
+
 if not df.empty and "official_belgian_price_liter" in df.columns:
-    
-    # Basisprijs is Standaard Mazout (50ppm)
-    df["prijs_standaard"] = df["official_belgian_price_liter"]
-
-    # Als er nog geen 'prijs_extra' kolom in de DB zit, berekenen we deze met de standaard H0-toeslag
-    if "prijs_extra" not in df.columns:
-        df["prijs_extra"] = df["prijs_standaard"] + 0.3751  # H0/H7 marktverschil
-
     latest_row = df.iloc[-1]
     latest_date = latest_row["date"].strftime("%d-%m-%Y") if "date" in df.columns else "Onbekend"
-
-    # ---------------------------------------------------------
-    # 4. KPI KAARTEN BOVENAAN
-    # ---------------------------------------------------------
-    st.subheader("📊 Huidige Maximumprijzen & Marktstatus")
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(
-            label="🟢 Standaard (50ppm)",
-            value=f"€ {latest_row['prijs_standaard']:.4f} / L",
-            help="Officiële FOD maximumprijs voor gewone stookolie."
+            label="🛢️ Officiële Prijs",
+            value=f"€ {latest_row['official_belgian_price_liter']:.3f} / L",
+            help="Officiële Belgische maximumprijs per liter."
         )
 
     with col2:
-        st.metric(
-            label="🔵 Mazout Extra (H0 / H7)",
-            value=f"€ {latest_row['prijs_extra']:.4f} / L",
-            help="Maximumprijs voor zwavelarme stookolie (dieselkwaliteit)."
-        )
-
-    with col3:
         st.metric(
             label="💡 Advies",
             value=str(latest_row.get('advice', 'N/B')),
             help="Aankoopadvies op basis van marktanalyse."
         )
 
-    with col4:
+    with col3:
         st.metric(
             label="📉 Markt Trend",
             value=str(latest_row.get('trend', 'N/B')),
-            help="Huidige markttrend."
+            help="Huidige verwachte markttrend."
         )
+
+    with col4:
+        # Als er een wisselkoers of ruwe olieprijs aanwezig is
+        if 'oil_eur_ton' in latest_row and pd.notnull(latest_row['oil_eur_ton']):
+            st.metric(
+                label="🌐 Olieprijs (€/Ton)",
+                value=f"€ {latest_row['oil_eur_ton']:.2f}",
+                help="Marktprijs ruwe olie per ton."
+            )
+        elif 'eurusd' in latest_row and pd.notnull(latest_row['eurusd']):
+            st.metric(
+                label="🔱 EUR/USD",
+                value=f"{latest_row['eurusd']:.4f}",
+                help="Wisselkoers Euro vs Dollar."
+            )
 
     st.caption(f"*Laatst bijgewerkt op: {latest_date}*")
     st.divider()
 
     # ---------------------------------------------------------
-    # 5. GRAFIEK MET 2 LIJNEN
+    # 4. GRAFIEK SECTIE
     # ---------------------------------------------------------
-    st.subheader("📈 Prijsontwikkeling per Liter")
-
-    # Data omvormen voor Plotly (2 lijnen)
-    df_melted = df.melt(
-        id_vars=["date"], 
-        value_vars=["prijs_standaard", "prijs_extra"],
-        var_name="Type Stookolie", 
-        value_name="Prijs_per_liter"
-    )
-
-    df_melted["Type Stookolie"] = df_melted["Type Stookolie"].map({
-        "prijs_standaard": "Mazout Standaard (50ppm)",
-        "prijs_extra": "Mazout Extra (H0/H7)"
-    })
+    st.subheader("📈 Prijsverloop Belgische Mazout (€ / Liter)")
 
     fig = px.line(
-        df_melted, 
+        df, 
         x="date", 
-        y="Prijs_per_liter", 
-        color="Type Stookolie",
-        color_discrete_map={
-            "Mazout Standaard (50ppm)": "#2ea043",  # Groen
-            "Mazout Extra (H0/H7)": "#0969da"        # Blauw
-        },
-        labels={"date": "Datum", "Prijs_per_liter": "Prijs (€ / Liter)"},
+        y="official_belgian_price_liter",
+        labels={"date": "Datum", "official_belgian_price_liter": "Prijs (€ / Liter)"},
         markers=True
     )
 
+    # Styling van de lijn
+    fig.update_traces(line_color="#0969da", line_width=3)
+
     fig.update_layout(
         hovermode="x unified", 
-        legend_title_text="Soort Mazout",
         xaxis_title="Datum",
         yaxis_title="Prijs per Liter (€)"
     )
@@ -150,7 +131,7 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
     st.plotly_chart(fig, use_container_width=True)
 
     # ---------------------------------------------------------
-    # 6. HISTORISCHE DATATABEL
+    # 5. HISTORISCHE DATATABEL SECTIE
     # ---------------------------------------------------------
     st.divider()
     with st.expander("📋 Bekijk de volledige historie in tabelvorm"):
@@ -164,15 +145,15 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
             hide_index=True
         )
 
+else:
+    st.warning("De database bevat momenteel geen geldige prijsgegevens.")
+
 # ---------------------------------------------------------
-# 7. UTLEG / FOOTER
+# 6. INFO
 # ---------------------------------------------------------
 st.info(
     """
-    ℹ️ **Waarom zie je twee prijzen?**
-    * **Mazout Standaard (50ppm):** De officiële basismaximumprijs voor traditionele stookolie.
-    * **Mazout Extra (H0 / H7):** Zwavelarme stookolie van dieselkwaliteit voor moderne condensatieketels.
-    
-    *Let op:* De meeste mazoutleveranciers bieden tegenwoordig standaard **Mazout Extra (H0)** aan op hun website.
+    ℹ️ **Over deze gegevens:**
+    Deze applicatie toont de officiële Belgische maximumprijzen voor stookolie, gecombineerd met actuele markttrends en aankoopadviezen.
     """
 )
