@@ -2,13 +2,14 @@ name: Dagelijkse Mazout Prijs Update
 
 on:
   schedule:
-    # Elke dag om 09:00 uur Midden-Europese Tijd (07:00 UTC)
     - cron: '0 7 * * *'
-  workflow_dispatch: # Hiermee kun je het ook handmatig testen via GitHub
+  workflow_dispatch:
 
 jobs:
   update-price:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Code ophalen uit repository
         uses: actions/checkout@v4
@@ -32,5 +33,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add .
-          git diff-index --quiet HEAD || git commit -m "Auto-update mazoutprijzen [skip ci]"
-          git push
+          git diff-index --quiet HEAD || (git pull --rebase origin main && git commit -m "Auto-update mazoutprijzen [skip ci]" && git push)
