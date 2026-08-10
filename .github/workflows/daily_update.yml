@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Code ophalen uit repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Python instellen
         uses: actions/setup-python@v5
@@ -33,4 +35,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add .
-          git diff-index --quiet HEAD || (git pull --rebase origin main && git commit -m "Auto-update mazoutprijzen [skip ci]" && git push)
+          git diff-index --quiet HEAD || (git pull --rebase origin main && git push origin main)
