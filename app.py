@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# VANDESTEEN.BE BRANDING & CUSTOM CSS
+# VANDESTEEN.BE BRANDING & CUSTOM CSS (COMPACT FONTS)
 # ---------------------------------------------------------
 st.markdown("""
     <style>
@@ -36,25 +36,31 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
-    /* Metric Cards Styling - Vandesteen Orange Accent */
+    /* Metric Cards Styling - Vandesteen Orange Accent & Compact Fonts */
     div[data-testid="stMetric"] {
         background-color: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-top: 4px solid #D9531E;
-        padding: 15px 20px;
+        padding: 12px 14px;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
-    div[data-testid="stMetricLabel"] {
+    /* Smaller font for Labels to prevent '...' truncation */
+    div[data-testid="stMetricLabel"] p {
         color: #475569;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+        overflow: visible;
     }
     
-    div[data-testid="stMetricValue"] {
+    /* Smaller font for Metric Values */
+    div[data-testid="stMetricValue"] div {
         color: #0F172A;
         font-weight: 700;
+        font-size: 1.25rem !important;
+        white-space: nowrap;
     }
 
     .stAlert {
