@@ -28,7 +28,7 @@ st.markdown("""
     /* Full-width Black Header Banner */
     .header-banner {
         background-color: #0F172A; /* Deep Black / Dark Slate */
-        padding: 16px 24px;
+        padding: 18px 24px;
         border-radius: 8px;
         margin-bottom: 25px;
         border-bottom: 4px solid #D9531E; /* Vandesteen Accent Orange */
@@ -38,13 +38,13 @@ st.markdown("""
         font-family: 'Montserrat', sans-serif !important;
         color: #FFFFFF !important;
         font-weight: 700;
-        font-size: 1.35rem !important; /* 1 slag kleiner voor 1 strakke regel */
-        letter-spacing: -0.02em;
+        font-size: 1.6rem !important; /* Terug opgeschaald naar krachtig formaat */
+        letter-spacing: -0.01em;
         margin: 0;
         display: flex;
         align-items: center;
         gap: 12px;
-        white-space: nowrap; /* Voorkomt dat Advice naar tweede regel klapt */
+        white-space: nowrap; /* Garandeert 1 strakke regel */
     }
 
     /* Subheaders in Vandesteen Font */
