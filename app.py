@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# VANDESTEEN.BE BRANDING & CUSTOM CSS (COMPACT FONTS)
+# VANDESTEEN.BE BRANDING & CUSTOM CSS (BLACK HEADER)
 # ---------------------------------------------------------
 st.markdown("""
     <style>
@@ -24,10 +24,23 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     
-    .main-title {
-        color: #1E293B;
-        font-weight: 700;
+    /* Full-width Black Header Banner */
+    .header-banner {
+        background-color: #0F172A; /* Deep Black / Dark Slate */
+        padding: 24px 30px;
+        border-radius: 8px;
         margin-bottom: 25px;
+        border-bottom: 4px solid #D9531E; /* Vandesteen Accent Orange */
+    }
+    
+    .header-title {
+        color: #FFFFFF !important;
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     /* Metric Cards Styling - Vandesteen Orange Accent & Compact Fonts */
@@ -40,7 +53,7 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
-    /* Smaller font for Labels to prevent '...' truncation */
+    /* Smaller font for Labels to prevent truncation */
     div[data-testid="stMetricLabel"] p {
         color: #475569;
         font-weight: 600;
@@ -76,7 +89,12 @@ st.markdown("""
 # ---------------------------------------------------------
 DB_FILE = "mazout_data.db"
 
-st.markdown('<h1 class="main-title">🛢️ Belgian Heating Oil Price & Market Advice</h1>', unsafe_allow_html=True)
+# Black Banner Header
+st.markdown("""
+    <div class="header-banner">
+        <h1 class="header-title">🛢️ Belgian Heating Oil Price & Market Advice</h1>
+    </div>
+""", unsafe_allow_html=True)
 
 if not os.path.exists(DB_FILE):
     st.error(f"⚠️ Database file '{DB_FILE}' not found.")
