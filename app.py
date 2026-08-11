@@ -27,12 +27,6 @@ st.markdown("""
     .main-title {
         color: #1E293B;
         font-weight: 700;
-        margin-bottom: 0px;
-    }
-    
-    .sub-caption {
-        color: #64748B;
-        font-size: 0.95rem;
         margin-bottom: 25px;
     }
 
@@ -67,6 +61,13 @@ st.markdown("""
         border-radius: 8px;
         border-left: 4px solid #D9531E !important;
     }
+
+    .meta-caption {
+        color: #64748B;
+        font-size: 0.85rem;
+        margin-top: 10px;
+        margin-bottom: 2px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -76,7 +77,6 @@ st.markdown("""
 DB_FILE = "mazout_data.db"
 
 st.markdown('<h1 class="main-title">🛢️ Belgian Heating Oil Price & Market Advice</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-caption">Official Belgian maximum price per liter (Gasolie Extra H0/H7, orders ≥ 2,000L, incl. VAT)</p>', unsafe_allow_html=True)
 
 if not os.path.exists(DB_FILE):
     st.error(f"⚠️ Database file '{DB_FILE}' not found.")
@@ -178,6 +178,7 @@ if not df.empty and "official_belgian_price_liter" in df.columns:
                 help="Exchange rate Euro vs US Dollar."
             )
 
+    st.markdown('<p class="meta-caption">Official Belgian maximum price per liter (Gasolie Extra H0/H7, orders ≥ 2,000L, incl. VAT)</p>', unsafe_allow_html=True)
     st.caption(f"*Last updated on: {latest_date}*")
     st.divider()
 
