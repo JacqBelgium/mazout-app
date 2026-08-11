@@ -5,7 +5,7 @@ import re
 def get_belgian_official_price():
     """
     Haalt de meest actuele officiële Belgische maximumprijs voor Gasolie Extra (H0/H7) op
-    voor bestellingen >= 2000L, incl. 21% BTW (circa €1.22 - €1.27 per liter).
+    voor bestellingen >= 2000L, incl. 21% BTW (vandaag: €1.3140 / L).
     """
     url = "https://economie.fgov.be/nl/themas/energie/energieprijzen/officiele-aardolieproducten"
     headers = {
@@ -22,29 +22,28 @@ def get_belgian_official_price():
                 for row in table.find_all('tr'):
                     row_text = row.get_text().lower()
                     
-                    if 'gasolie extra' in row_text or 'extra' in row_text or 'h0' in row_text:
+                    if 'gasolie' in row_text or 'extra' in row_text or 'h0' in row_text:
                         matches = re.findall(r'(\d[.,]\d{3,4})', row.get_text())
                         valid_prices = []
                         for m in matches:
                             val = float(m.replace(',', '.'))
-                            # Realistische range voor Gasolie Extra incl BTW is tussen 0.95 en 1.70
-                            if 0.95 <= val <= 1.70:
+                            if 1.00 <= val <= 1.80:
                                 valid_prices.append(val)
                         
                         if valid_prices:
-                            # Neem de hoogste waarde in de geselecteerde range (incl BTW consumentenprijs)
-                            price_extra = round(max(valid_prices), 4)
+                            # Neem de lagere waarde van de geldige consumentenprijzen (>=2000L tarief)
+                            price_extra = round(min(valid_prices), 4)
                             print(f"[Scraper SUCCESS] Gevonden Gasolie Extra prijs: €{price_extra}")
                             return price_extra
 
             print("[Scraper WARNING] Geen specifieke tabelrij gematcht, fallback gebruikt.")
-            return 1.2291
+            return 1.3140
         else:
-            return 1.2291
+            return 1.3140
             
     except Exception as e:
         print(f"[Scraper ERROR] Fout bij ophalen FOD data: {e}")
-        return 1.2291
+        return 1.3140
 
 if __name__ == "__main__":
     price = get_belgian_official_price()
