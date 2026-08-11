@@ -14,33 +14,43 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
-# VANDESTEEN.BE BRANDING & CUSTOM CSS (BLACK HEADER)
+# VANDESTEEN.BE BRANDING & CUSTOM CSS (MONTSERRAT / OPEN SANS FONT)
 # ---------------------------------------------------------
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    /* Import Vandesteen Fonts: Montserrat & Open Sans */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
     /* Full-width Black Header Banner */
     .header-banner {
         background-color: #0F172A; /* Deep Black / Dark Slate */
-        padding: 24px 30px;
+        padding: 16px 24px;
         border-radius: 8px;
         margin-bottom: 25px;
         border-bottom: 4px solid #D9531E; /* Vandesteen Accent Orange */
     }
     
     .header-title {
+        font-family: 'Montserrat', sans-serif !important;
         color: #FFFFFF !important;
         font-weight: 700;
-        font-size: 1.8rem;
+        font-size: 1.35rem !important; /* 1 slag kleiner voor 1 strakke regel */
+        letter-spacing: -0.02em;
         margin: 0;
         display: flex;
         align-items: center;
         gap: 12px;
+        white-space: nowrap; /* Voorkomt dat Advice naar tweede regel klapt */
+    }
+
+    /* Subheaders in Vandesteen Font */
+    h2, h3 {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
     }
 
     /* Metric Cards Styling - Vandesteen Orange Accent & Compact Fonts */
@@ -55,6 +65,7 @@ st.markdown("""
     
     /* Smaller font for Labels to prevent truncation */
     div[data-testid="stMetricLabel"] p {
+        font-family: 'Montserrat', sans-serif;
         color: #475569;
         font-weight: 600;
         font-size: 0.75rem !important;
@@ -64,6 +75,7 @@ st.markdown("""
     
     /* Smaller font for Metric Values */
     div[data-testid="stMetricValue"] div {
+        font-family: 'Montserrat', sans-serif;
         color: #0F172A;
         font-weight: 700;
         font-size: 1.25rem !important;
@@ -92,7 +104,7 @@ DB_FILE = "mazout_data.db"
 # Black Banner Header
 st.markdown("""
     <div class="header-banner">
-        <h1 class="header-title">🛢️ Belgian Heating Oil Price & Market Advice</h1>
+        <h1 class="header-title">🛢️ Belgian Heating Oil Price & Advice</h1>
     </div>
 """, unsafe_allow_html=True)
 
