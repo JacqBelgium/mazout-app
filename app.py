@@ -4,15 +4,51 @@ import sqlite3
 from main import run_engine
 
 st.set_page_config(
-    page_title="Belgische Mazout Prijs Trends",
+    page_title="Belgian Heating Oil Price Trends",
     page_icon="🛢️",
     layout="wide"
 )
 
-st.title("🛢️ Belgische Mazout Prijs Prognose")
-st.write("Onafhankelijke analyse van de stookolieprijs op basis van de internationale beurzen en het Belgische FOD-kliksysteem.")
+st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+    .vandersteen-header {
+        background-color: #000000;
+        color: #FFD700;
+        padding: 2.5rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    .vandersteen-header h1 {
+        color: #FFD700 !important;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 2.3rem;
+    }
+    .vandersteen-header p {
+        color: #FFFFFF !important;
+        font-size: 1.1rem;
+        margin: 0;
+        opacity: 0.9;
+    }
+    div[data-testid="stMetricValue"] {
+        font-weight: 700;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Engine uitvoeren voor live gegevens
+st.markdown("""
+    <div class="vandersteen-header">
+        <h1>🛢️ Belgian Heating Oil Price Trends</h1>
+        <p>Independent analysis of heating oil prices based on international exchanges and the official Belgian FPS Economy threshold system.</p>
+    </div>
+""", unsafe_allow_html=True)
+
 short_term, mid_term, official_price = run_engine()
 
 if short_term:
@@ -20,45 +56,66 @@ if short_term:
     
     with col1:
         st.metric(
-            label="Marktkoers Grondstof (excl. tax)",
+            label="Market Crude Value (excl. tax)",
             value=f"€ {short_term['latest_market_liter']:.3f} / L",
             delta=f"€ {short_term['latest_eur_ton']} / ton"
         )
         
     with col2:
         st.metric(
-            label="Huidige Max. Prijs (FOD)",
+            label="Current Max Price (FPS Official)",
             value=f"€ {official_price:.4f} / L"
         )
         
     with col3:
         st.metric(
-            label="Verwachte Prijs (1-3 Dagen)",
+            label="Estimated Price (1-3 Days)",
             value=f"€ {short_term['predicted_official_liter']:.4f} / L",
             delta=f"{short_term['delta_per_liter']:.4f} €/L"
         )
 
     st.markdown("---")
     
-    # Korte termijn Advies Box
-    if "WACHTEN" in short_term['advice']:
-        st.success(f"### ⏳ Advies: {short_term['advice']}\n\n{short_term['status']}")
-    elif "KOPEN" in short_term['advice']:
-        st.error(f"### 🚀 Advies: {short_term['advice']}\n\n{short_term['status']}")
+    trend_title = short_term['advice'].replace("WACHTEN / HOLD", "HOLD / EXPECTED PRICE DROP").replace("NU KOPEN / BUY NOW", "EXPECTED PRICE INCREASE").replace("NEUTRAAL", "STABLE / NEUTRAL")
+    
+    status_en = short_term['status']
+    status_en = status_en.replace("Prijsdaling verwacht van ca.", "Expected price drop of approx.")
+    status_en = status_en.replace("over 1-3 dagen. Wacht nog even met bestellen! Je bespaart ca.", "over 1-3 days. Potential savings of approx.")
+    status_en = status_en.replace("op 2.000 liter.", "on a 2,000-liter order.")
+    status_en = status_en.replace("Prijsstijging verwacht van ca.", "Expected price increase of approx.")
+    status_en = status_en.replace("Bestel vandaag of morgen om ca.", "Order in time to save approx.")
+    status_en = status_en.replace("te besparen op 2.000 liter.", "on a 2,000-liter order.")
+    status_en = status_en.replace("Stabiele markt. Geen significante prijsaanpassing verwacht de komende 48 uur (verandering valt binnen de wettelijke FOD-drempelwaarde).", 
+                                  "Stable market. No significant official price adjustment expected within the next 48 hours (fluctuations remain within the legal threshold).")
+
+    if "HOLD" in short_term['advice'] or "WACHTEN" in short_term['advice']:
+        st.info(f"### ⏳ Short-Term Trend Outlook: {trend_title}\n\n{status_en}")
+    elif "KOPEN" in short_term['advice'] or "BUY" in short_term['advice']:
+        st.warning(f"### 📈 Short-Term Trend Outlook: {trend_title}\n\n{status_en}")
     else:
-        st.info(f"### ⚖️ Advies: {short_term['advice']}\n\n{short_term['status']}")
+        st.info(f"### ⚖️ Short-Term Trend Outlook: {trend_title}\n\n{status_en}")
         
-    # Financieel effect bij 2.000 Liter
-    st.subheader("💰 Impact op een standaard bestelling (2.000 Liter)")
-    st.write(f"Geschat voordeel / nadeel bij bestellen over 24-48u: **€ {short_term['impact_2000l']:.2f}**")
+    st.subheader("💰 Financial Impact on Standard Order (2,000 Liters)")
+    st.write(f"Estimated financial gap/difference within 24–48h: **€ {short_term['impact_2000l']:.2f}**")
 
 st.markdown("---")
 
-# Historie tonen uit SQLite
-st.subheader("📊 Historische Trend")
+st.subheader("📊 Historical Price Trend & Evolution")
+
 conn = sqlite3.connect('mazout_data.db')
-df_hist = pd.read_sql_query("SELECT date, oil_eur_ton, official_belgian_price_liter FROM daily_predictions ORDER BY date DESC LIMIT 30", conn)
+df_hist = pd.read_sql_query("SELECT date, oil_eur_ton, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
 conn.close()
 
 if not df_hist.empty:
-    st.dataframe(df_hist, width=1200)
+    df_hist['date'] = pd.to_datetime(df_hist['date'])
+    df_hist = df_hist.set_index('date')
+    
+    st.line_chart(
+        df_hist[['official_belgian_price_liter']],
+        height=350
+    )
+    
+    with st.expander("View Raw Historical Data Table"):
+        st.dataframe(df_hist.sort_index(ascending=False), width=1200)
+
+st.caption("Disclaimer: This platform provides data-driven statistical market trend forecasts based on public market indicators and official threshold formulas. It does not constitute financial or commercial advice.")
