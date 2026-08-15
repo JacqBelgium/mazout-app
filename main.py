@@ -11,7 +11,8 @@ def fetch_market_data():
     eurusd_ticker = yf.Ticker('EURUSD=X')
     df_eurusd = eurusd_ticker.history(period='3mo')
     
-    oil_tickers = ['LGO.F', 'BZ=F', 'CL=F']
+    # We gebruiken Brent crude (BZ=F) of WTI (CL=F) om altijd een correcte tonprijs te berekenen
+    oil_tickers = ['BZ=F', 'CL=F']
     df_oil = pd.DataFrame()
     used_ticker = ""
 
@@ -39,14 +40,8 @@ def fetch_market_data():
     data = pd.concat([s_oil, s_eurusd], axis=1).sort_index()
     data = data.ffill().bfill().dropna()
     
-    # Calculate Euro per ton with dynamic scaling factor
-    if used_ticker in ['BZ=F', 'CL=F']:
-        data['gasoil_eur_ton'] = (data['oil_usd'] * 7.33) / data['eurusd']
-    else:
-        raw = data['oil_usd'] / data['eurusd']
-        while raw.iloc[-1] < 100:
-            raw = raw * 10
-        data['gasoil_eur_ton'] = raw
+    # Omrekening naar EUR/ton: Olie in $/vat * 7.33 = $/ton / EURUSD = EUR/ton
+    data['gasoil_eur_ton'] = (data['oil_usd'] * 7.33) / data['eurusd']
         
     return data
 
