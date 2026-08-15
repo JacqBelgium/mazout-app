@@ -4,14 +4,16 @@ from datetime import datetime
 from fod_data import get_belgian_official_price
 from database import init_db, save_daily_record
 
+FIXED_MARGINS_ACCIJNS = 0.31  # Vaste opslag & accijnzen per liter
+VAT_RATE = 1.21               # 21% BTW
+
 def fetch_market_data():
-    """Fetches Rotterdam market data & EUR/USD exchange rates."""
+    """Fetches Rotterdam market data & exchange rates."""
     print("Fetching Rotterdam market data & exchange rates...")
     
     eurusd_ticker = yf.Ticker('EURUSD=X')
     df_eurusd = eurusd_ticker.history(period='3mo')
     
-    # We gebruiken Brent crude (BZ=F) of WTI (CL=F) om altijd een correcte tonprijs te berekenen
     oil_tickers = ['BZ=F', 'CL=F']
     df_oil = pd.DataFrame()
     used_ticker = ""
@@ -40,35 +42,50 @@ def fetch_market_data():
     data = pd.concat([s_oil, s_eurusd], axis=1).sort_index()
     data = data.ffill().bfill().dropna()
     
-    # Omrekening naar EUR/ton: Olie in $/vat * 7.33 = $/ton / EURUSD = EUR/ton
+    # 1. Omrekening naar EUR / ton
     data['gasoil_eur_ton'] = (data['oil_usd'] * 7.33) / data['eurusd']
-        
+    
+    # 2. Omrekening naar Markt-literprijs excl. taksen (1 ton gasolie ≈ 1190 liter)
+    data['market_eur_liter_excl'] = data['gasoil_eur_ton'] / 1190.0
+    
+    # 3. Geschatte consumentenprijs incl. accijnzen & 21% BTW
+    data['estimated_official_liter'] = (data['market_eur_liter_excl'] + FIXED_MARGINS_ACCIJNS) * VAT_RATE
+    
     return data
 
-def analyze_short_term(df):
-    """SHORT-TERM PROGNOSTICS (1-5 Days)"""
-    total_rows = len(df)
-    latest = df['gasoil_eur_ton'].iloc[-1]
+def analyze_short_term(df, official_price):
+    """SHORT-TERM PROGNOSTICS (1-5 Days) with 2000L Impact Calculation."""
+    latest_ton = df['gasoil_eur_ton'].iloc[-1]
+    latest_market_liter = df['market_eur_liter_excl'].iloc[-1]
     
-    compare_idx = -4 if total_rows >= 4 else 0
-    prev_3d = df['gasoil_eur_ton'].iloc[compare_idx]
+    df['SMA_7_official'] = df['estimated_official_liter'].rolling(window=7, min_periods=1).mean()
+    predicted_official = df['SMA_7_official'].iloc[-1]
     
-    change_3d_pct = ((latest - prev_3d) / prev_3d) * 100
+    delta_per_liter = predicted_official - official_price
     
-    if change_3d_pct < -1.5:
-        advice = "WAIT / HOLD"
-        status = "Downward market pressure. Belgian maximum price will likely DROP in 1-3 days."
-    elif change_3d_pct > 1.5:
-        advice = "BUY NOW"
-        status = "Rising market price. Belgian maximum price will likely RISE in 1-3 days."
+    volume = 2000
+    impact_2000l = abs(delta_per_liter) * volume
+    
+    if delta_per_liter <= -0.010:
+        advice = "WACHTEN / HOLD"
+        status = (f"Prijsdaling verwacht van ca. € {abs(delta_per_liter):.3f}/L over 1-3 dagen. "
+                  f"Wacht nog even met bestellen! Je bespaart ca. € {impact_2000l:.2f} op 2.000 liter.")
+    elif delta_per_liter >= 0.010:
+        advice = "NU KOPEN / BUY NOW"
+        status = (f"Prijsstijging verwacht van ca. € {delta_per_liter:.3f}/L over 1-3 dagen. "
+                  f"Bestel vandaag of morgen om ca. € {impact_2000l:.2f} te besparen op 2.000 liter.")
     else:
-        advice = "NEUTRAL"
-        status = "Stable short-term market. No major price adjustment expected in 1-3 days."
+        advice = "NEUTRAAL"
+        status = ("Stabiele markt. Geen significante prijsaanpassing verwacht de komende 48 uur "
+                  "(verandering valt binnen de wettelijke FOD-drempelwaarde).")
         
     return {
-        "latest_eur_ton": round(latest, 2),
+        "latest_eur_ton": round(latest_ton, 2),
+        "latest_market_liter": round(latest_market_liter, 3),
+        "predicted_official_liter": round(predicted_official, 4),
+        "delta_per_liter": round(delta_per_liter, 4),
+        "impact_2000l": round(impact_2000l, 2),
         "latest_eurusd": round(df['eurusd'].iloc[-1], 4),
-        "change_3d_pct": round(change_3d_pct, 2),
         "advice": advice,
         "status": status
     }
@@ -82,11 +99,11 @@ def analyze_mid_term(df):
     sma20 = df['SMA_20'].iloc[-1]
     
     if sma5 > sma20:
-        trend = "BULLISH (UPWARD)"
-        explanation = "Short-term moving average is above the 20-day average (rising trend)."
+        trend = "STIJGEND (BULLISH)"
+        explanation = "Korte termijn gemiddelde ligt boven het 20-daags gemiddelde (opwaartse druk)."
     else:
-        trend = "BEARISH (DOWNWARD)"
-        explanation = "Short-term moving average is below the 20-day average (falling trend)."
+        trend = "DALEND (BEARISH)"
+        explanation = "Korte termijn gemiddelde ligt onder het 20-daags gemiddelde (neerwaartse druk)."
         
     return {
         "trend": trend,
@@ -101,9 +118,9 @@ def run_engine():
     if df.empty:
         return None, None, None
         
-    short_term = analyze_short_term(df)
-    mid_term = analyze_mid_term(df)
     official_price = get_belgian_official_price()
+    short_term = analyze_short_term(df, official_price)
+    mid_term = analyze_mid_term(df)
     
     today_str = datetime.now().strftime('%Y-%m-%d')
     save_daily_record(
@@ -120,16 +137,17 @@ def run_engine():
 if __name__ == "__main__":
     short_term, mid_term, official_price = run_engine()
     if short_term:
-        print("\n" + "="*55)
-        print("    BELGIAN HEATING OIL PROGNOSTICS ENGINE")
-        print("="*55)
-        print(f"Latest Market Price:               €{short_term['latest_eur_ton']} / ton")
-        print(f"Belgian Official Max Price:       €{official_price} / Liter")
-        print(f"3-Day Market Change:               {short_term['change_3d_pct']}%")
-        print("-" * 55)
-        print(f"SHORT-TERM ADVICE (1-5 Days):      {short_term['advice']}")
-        print(f"Reasoning:                         {short_term['status']}")
-        print("-" * 55)
-        print(f"MID-TERM TREND (Weeks/Months):     {mid_term['trend']}")
-        print(f"Reasoning:                         {mid_term['explanation']}")
-        print("="*55 + "\n")
+        print("\n" + "="*60)
+        print("     BELGISCHE MAZOUT PROGNOSE ENGINE")
+        print("="*60)
+        print(f"Marktkoers Grondstof (excl. tax):  € {short_term['latest_market_liter']} / Liter (€ {short_term['latest_eur_ton']} / ton)")
+        print(f"Huidige Officiële Max. Prijs:      € {official_price} / Liter")
+        print(f"Verwachte Officiële Prijs (7-SMA): € {short_term['predicted_official_liter']} / Liter")
+        print("-" * 60)
+        print(f"KORTE TERMIJN ADVIES (1-5 Dagen):  {short_term['advice']}")
+        print(f"Financieel Effect op 2.000 Liter:  € {short_term['impact_2000l']:.2f}")
+        print(f"Toelichting:                       {short_term['status']}")
+        print("-" * 60)
+        print(f"MIDDENLANGE TERMIJN TREND:         {mid_term['trend']}")
+        print(f"Toelichting:                       {mid_term['explanation']}")
+        print("="*60 + "\n")
