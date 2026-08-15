@@ -4,7 +4,7 @@ from datetime import datetime
 from fod_data import get_belgian_official_price
 from database import init_db, save_daily_record
 
-FIXED_MARGINS_ACCIJNS = 0.31  # Vaste opslag & accijnzen per liter
+FIXED_MARGINS_ACCIJNS = 0.615  # Vaste opslag & accijnzen per liter
 VAT_RATE = 1.21               # 21% BTW
 
 def fetch_market_data():
