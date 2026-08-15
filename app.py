@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Custom CSS for Vandersteen Styling (Full-Width Black Banner, Centered Yellow Text)
+# 2. Custom CSS for Vandersteen Styling & Full Width Column Alignment
 st.markdown("""
     <style>
     /* Remove top/side margins to stretch header full width */
@@ -48,21 +48,28 @@ st.markdown("""
         color: #FFFFFF !important;
         font-size: 1.15rem;
         margin: 0 auto;
-        max-width: 900px;
+        max-width: 950px;
         line-height: 1.5;
         text-align: center;
         opacity: 0.95;
     }
     
-    /* Content wrapper for inner margins */
+    /* Main Content Wrapper - Evenly Distributed */
     .main-content {
-        max-width: 1200px;
+        max-width: 1300px;
         margin: 0 auto;
-        padding: 0 1rem;
+        padding: 0 1.5rem;
     }
     
     div[data-testid="stMetricValue"] {
         font-weight: 700;
+    }
+    
+    .date-subtext {
+        font-size: 0.85rem;
+        color: #666666;
+        margin-top: -0.5rem;
+        margin-bottom: 0.5rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -71,21 +78,21 @@ st.markdown("""
 st.markdown("""
     <div class="vandersteen-full-header">
         <h1>🛢️ Belgian Heating Oil Price Trends</h1>
-        <p>Maximum Consumer Price by FOD Finance, plus trend based on independent analysis of heating oil prices based on international exchanges.</p>
+        <p>Maximum Consumer Price by FOD Finance, plus estimated trend based on independent analysis of heating oil prices based on international exchanges.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Container for main content
+# Main container
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
 # 4. Engine Execution
 short_term, mid_term, official_price = run_engine()
-today_date_str = datetime.now().strftime('%d/%m/%Y')
+today_date_str = datetime.now().strftime('%d-%m-%Y')
 is_weekend = datetime.now().weekday() >= 5  # 5 = Saturday, 6 = Sunday
 
 if short_term:
-    # --- Top Row: 3 Key Metrics ---
-    col1, col2, col3 = st.columns(3)
+    # --- Top Row: 3 Key Metrics evenly spread ---
+    col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
         st.metric(
@@ -96,9 +103,10 @@ if short_term:
         
     with col2:
         st.metric(
-            label=f"Current Max Price (FOD Finance) — {today_date_str}",
+            label="Current Max Price (FOD Finance)",
             value=f"€ {official_price:.4f} / L"
         )
+        st.markdown(f'<div class="date-subtext">Based Date: {today_date_str}</div>', unsafe_allow_html=True)
         
     with col3:
         st.metric(
@@ -109,8 +117,8 @@ if short_term:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- Financial Impact Directly Below Metrics ---
-    st.info(f"💰 **Financial Impact on Standard Order (2,000 Liters):** Estimated gap/difference within 24–48 hours is **€ {short_term['impact_2000l']:.2f}**")
+    # --- Financial Impact Box ---
+    st.info(f"💰 **Estimated Impact on Standard Order (>2,000 liters):** **€ {short_term['impact_2000l']:.2f}**")
 
     # --- Weekend Notice if applicable ---
     if is_weekend:
@@ -123,13 +131,13 @@ if short_term:
     
     status_en = short_term['status']
     status_en = status_en.replace("Prijsdaling verwacht van ca.", "Expected price drop of approx.")
-    status_en = status_en.replace("over 1-3 dagen. Wacht nog even met bestellen! Je bespaart ca.", "over 1-3 days (24–48h). Potential savings of approx.")
+    status_en = status_en.replace("over 1-3 dagen. Wacht nog even met bestellen! Je bespaart ca.", "over 1-3 days. Potential savings of approx.")
     status_en = status_en.replace("op 2.000 liter.", "on a 2,000-liter order.")
     status_en = status_en.replace("Prijsstijging verwacht van ca.", "Expected price increase of approx.")
-    status_en = status_en.replace("Bestel vandaag of morgen om ca.", "Order within 24–48h to save approx.")
+    status_en = status_en.replace("Bestel vandaag of morgen om ca.", "Order in time to save approx.")
     status_en = status_en.replace("te besparen op 2.000 liter.", "on a 2,000-liter order.")
     status_en = status_en.replace("Stabiele markt. Geen significante prijsaanpassing verwacht de komende 48 uur (verandering valt binnen de wettelijke FOD-drempelwaarde).", 
-                                  "Stable market. No significant official price adjustment expected within the next 24–48 hours (fluctuations remain within the legal FOD threshold).")
+                                  "Stable market. No significant official price adjustment expected within the next 48 hours (fluctuations remain within the legal FOD threshold).")
 
     # Trend Box
     if "HOLD" in short_term['advice'] or "WACHTEN" in short_term['advice']:
