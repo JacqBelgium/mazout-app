@@ -171,7 +171,10 @@ st.markdown("---")
 st.subheader("📊 Historical Price Trend Evolution")
 
 conn = sqlite3.connect('mazout_data.db')
-df_hist = pd.read_sql_query("SELECT date, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
+try:
+    df_hist = pd.read_sql_query("SELECT date, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
+except Exception:
+    df = pd.DataFrame()
 conn.close()
 
 if not df_hist.empty:
@@ -227,7 +230,7 @@ if not df_hist.empty:
     )
 
     fig.update_yaxes(autorange=True)
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("View Raw Historical Data Table"):
         st.dataframe(df_hist.sort_values(by='date', ascending=False), width=1200)
