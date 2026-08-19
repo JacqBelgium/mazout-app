@@ -226,8 +226,7 @@ if not df_hist.empty:
         hovermode="x unified"
     )
 
-    fig.update_yaxes(autorange=True)
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("View Raw Historical Data Table"):
         st.dataframe(df_hist.sort_values(by='date', ascending=False), width=1200)
