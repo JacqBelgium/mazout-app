@@ -22,7 +22,7 @@ st.markdown("""
     .vandersteen-full-header {
         background-color: #000000;
         color: #FFD700;
-        padding: 3rem 1.5rem;
+        padding: 2.5rem 1.5rem;
         text-align: center;
         width: 100vw;
         position: relative;
@@ -30,23 +30,23 @@ st.markdown("""
         right: 50%;
         margin-left: -50vw;
         margin-right: -50vw;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
     .vandersteen-full-header h1 {
         color: #FFD700 !important;
         font-family: 'Helvetica Neue', Arial, sans-serif;
         font-weight: 800;
-        margin-bottom: 0.8rem;
-        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 2.3rem;
         text-align: center;
     }
     .vandersteen-full-header p {
         color: #FFFFFF !important;
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         margin: 0 auto;
         max-width: 950px;
-        line-height: 1.5;
+        line-height: 1.4;
         text-align: center;
         opacity: 0.95;
     }
@@ -156,7 +156,7 @@ if short_term:
             'Component': ['Raw Market Product', 'Belgian Excise Duty', 'Distribution Margin', 'APETRA/BEOF Fund', '21% VAT'],
             'EUR/Liter': [prod_cost, excise_tax, margin, apetra_beof, vat_amount]
         })
-        st.bar_chart(df_chart.set_index('Component'), height=300)
+        st.bar_chart(df_chart.set_index('Component'), height=260)
 
     with col_table:
         df_table = pd.DataFrame({
@@ -165,22 +165,21 @@ if short_term:
         })
         st.table(df_table)
 
-# 6. Historical Chart & Data Table
+# 6. Compact Historical Chart Section
 st.markdown("---")
-st.subheader("📊 Historical Price Trend & Evolution")
+st.subheader("📊 Historical Price Trend Evolution")
 
 conn = sqlite3.connect('mazout_data.db')
-df_hist = pd.read_sql_query("SELECT date, oil_eur_ton, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
+df_hist = pd.read_sql_query("SELECT date, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
 conn.close()
 
 if not df_hist.empty:
     df_hist['date'] = pd.to_datetime(df_hist['date'])
     df_hist = df_hist.set_index('date')
+    df_hist.columns = ['Official Max Price (€/L)']
     
-    st.line_chart(
-        df_hist[['official_belgian_price_liter']],
-        height=350
-    )
+    # Compact Area Chart (vlakgrafiek, neemt veel minder verticale ruimte in)
+    st.area_chart(df_hist, height=220)
     
     with st.expander("View Raw Historical Data Table"):
         st.dataframe(df_hist.sort_index(ascending=False), width=1200)
