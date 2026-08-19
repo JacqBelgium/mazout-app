@@ -207,7 +207,7 @@ if not df_hist.empty:
         fillcolor='rgba(218, 165, 32, 0.06)'
     ))
 
-    fig.update_layout(
+    fig.update_layout(yaxis=dict(zeroline=False, autorange=True), 
         height=260,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor='rgba(0,0,0,0)',
