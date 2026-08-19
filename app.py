@@ -11,17 +11,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Custom CSS for Vandersteen Styling & Full Width Column Alignment
+# 2. Custom CSS for Vandersteen Styling
 st.markdown("""
     <style>
-    /* Remove top/side margins to stretch header full width */
     .block-container {
         padding-top: 0rem;
         padding-bottom: 2rem;
         max-width: 100% !important;
     }
-    
-    /* Full-Width Centered Black Header Banner */
     .vandersteen-full-header {
         background-color: #000000;
         color: #FFD700;
@@ -53,18 +50,14 @@ st.markdown("""
         text-align: center;
         opacity: 0.95;
     }
-    
-    /* Main Content Wrapper - Evenly Distributed */
     .main-content {
         max-width: 1300px;
         margin: 0 auto;
         padding: 0 1.5rem;
     }
-    
     div[data-testid="stMetricValue"] {
         font-weight: 700;
     }
-    
     .date-subtext {
         font-size: 0.85rem;
         color: #666666;
@@ -82,16 +75,14 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Main container
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
 # 4. Engine Execution
 short_term, mid_term, official_price = run_engine()
 today_date_str = datetime.now().strftime('%d-%m-%Y')
-is_weekend = datetime.now().weekday() >= 5  # 5 = Saturday, 6 = Sunday
+is_weekend = datetime.now().weekday() >= 5
 
 if short_term:
-    # --- Top Row: 3 Key Metrics evenly spread ---
     col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
@@ -117,16 +108,15 @@ if short_term:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- Financial Impact Box ---
+    # Financial Impact Box
     st.info(f"💰 **Estimated Impact on Standard Order (>2,000 liters):** **€ {short_term['impact_2000l']:.2f}**")
 
-    # --- Weekend Notice if applicable ---
     if is_weekend:
         st.warning("📅 **Weekend Notice:** FOD Finance does not update official prices on weekends. The trend below predicts the expected price adjustment for **Monday morning** based on Friday's market closing prices.")
 
     st.markdown("---")
     
-    # --- Trend Outlook & Translation ---
+    # Trend Outlook
     trend_title = short_term['advice'].replace("WACHTEN / HOLD", "HOLD / EXPECTED PRICE DROP").replace("NU KOPEN / BUY NOW", "EXPECTED PRICE INCREASE").replace("NEUTRAAL", "STABLE / NEUTRAL")
     
     status_en = short_term['status']
@@ -139,7 +129,6 @@ if short_term:
     status_en = status_en.replace("Stabiele markt. Geen significante prijsaanpassing verwacht de komende 48 uur (verandering valt binnen de wettelijke FOD-drempelwaarde).", 
                                   "Stable market. No significant official price adjustment expected within the next 48 hours (fluctuations remain within the legal FOD threshold).")
 
-    # Trend Box
     if "HOLD" in short_term['advice'] or "WACHTEN" in short_term['advice']:
         st.success(f"### ⏳ Short-Term Trend Outlook (1–3 Days): {trend_title}\n\n{status_en}")
     elif "KOPEN" in short_term['advice'] or "BUY" in short_term['advice']:
@@ -147,9 +136,37 @@ if short_term:
     else:
         st.info(f"### ⚖️ Short-Term Trend Outlook (1–3 Days): {trend_title}\n\n{status_en}")
 
+# 5. Price Breakdown Section
 st.markdown("---")
+st.subheader("🔍 Official Heating Oil Price Breakdown (Per Liter)")
+st.write("Understand where your money goes: breakdown of the current maximum consumer price according to official Belgian FOD criteria.")
 
-# 5. Historical Chart & Data Table
+if short_term:
+    prod_cost = short_term['latest_market_liter']
+    excise_tax = 0.2101
+    apetra_beof = 0.0120
+    margin = 0.1050
+    subtotal = prod_cost + excise_tax + apetra_beof + margin
+    vat_amount = subtotal * 0.21
+
+    col_chart, col_table = st.columns([1, 1])
+
+    with col_chart:
+        df_chart = pd.DataFrame({
+            'Component': ['Raw Market Product', 'Belgian Excise Duty', 'Distribution Margin', 'APETRA/BEOF Fund', '21% VAT'],
+            'EUR/Liter': [prod_cost, excise_tax, margin, apetra_beof, vat_amount]
+        })
+        st.bar_chart(df_chart.set_index('Component'), height=300)
+
+    with col_table:
+        df_table = pd.DataFrame({
+            'Cost Component': ['Raw Market Base (Rotterdam Excl. Tax)', 'Belgian Excise & Energy Duties', 'Official Distribution Margin', 'APETRA & BEOF Contributions', '21% VAT (Tax on Total)'],
+            'Amount per Liter': [f"€ {prod_cost:.4f}", f"€ {excise_tax:.4f}", f"€ {margin:.4f}", f"€ {apetra_beof:.4f}", f"€ {vat_amount:.4f}"]
+        })
+        st.table(df_table)
+
+# 6. Historical Chart & Data Table
+st.markdown("---")
 st.subheader("📊 Historical Price Trend & Evolution")
 
 conn = sqlite3.connect('mazout_data.db')
@@ -168,7 +185,6 @@ if not df_hist.empty:
     with st.expander("View Raw Historical Data Table"):
         st.dataframe(df_hist.sort_index(ascending=False), width=1200)
 
-# Legal Footer
 st.caption("Disclaimer: This platform provides data-driven statistical market trend forecasts based on public market indicators and official FOD Finance threshold formulas. It does not constitute financial or commercial advice.")
 
 st.markdown('</div>', unsafe_allow_html=True)
