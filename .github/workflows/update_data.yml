@@ -1,0 +1,36 @@
+name: Uurlijkse Mazout Data Refresh
+
+on:
+  schedule:
+    # Draait elk uur op het 30e minuut tussen 05:30 en 20:30 UTC (07:30 tot 22:30 in België)
+    - cron: '30 5-20 * * *'
+  workflow_dispatch: # Maakt het ook mogelijk om handmatig via GitHub te triggeren
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository ophalen
+        uses: actions/checkout@v3
+
+      - name: Python instellen
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Dependencies installeren
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas
+
+      - name: Marktdata ophalen en SQLite database bijwerken
+        run: |
+          python update_data.py
+
+      - name: Bijgewerkte database terugpushen naar GitHub
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add mazout_data.db
+          git diff-index --quiet HEAD || git commit -m "Auto-update mazout_data.db via GitHub Action"
+          git push
