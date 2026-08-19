@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
+import plotly.graph_objects as go
 from main import run_engine
 
 # 1. Page Configuration
@@ -165,7 +166,7 @@ if short_term:
         })
         st.table(df_table)
 
-# 6. Compact Historical Chart Section
+# 6. Interactive Plotly Historical Chart with Period Filter Buttons
 st.markdown("---")
 st.subheader("📊 Historical Price Trend Evolution")
 
@@ -175,14 +176,60 @@ conn.close()
 
 if not df_hist.empty:
     df_hist['date'] = pd.to_datetime(df_hist['date'])
-    df_hist = df_hist.set_index('date')
-    df_hist.columns = ['Official Max Price (€/L)']
     
-    # Compact Area Chart (vlakgrafiek, neemt veel minder verticale ruimte in)
-    st.area_chart(df_hist, height=220)
+    # Period Filter Radio/Knoppenrij
+    period_choice = st.radio(
+        "Select Time Period:",
+        options=["30 Days", "90 Days", "All Range"],
+        horizontal=True,
+        index=0
+    )
     
+    max_date = df_hist['date'].max()
+    if period_choice == "30 Days":
+        filtered_df = df_hist[df_hist['date'] >= (max_date - timedelta(days=30))]
+    elif period_choice == "90 Days":
+        filtered_df = df_hist[df_hist['date'] >= (max_date - timedelta(days=90))]
+    else:
+        filtered_df = df_hist
+
+    # Plotly Figure
+    fig = go.Figure()
+    
+    # Slanke gouden lijn met hele zachte donkere schaduw (geen felblauw vlak)
+    fig.add_trace(go.Scatter(
+        x=filtered_df['date'],
+        y=filtered_df['official_belgian_price_liter'],
+        mode='lines',
+        name='Official Max Price (€/L)',
+        line=dict(color='#DAA520', width=2.5),
+        fill='tozeroy',
+        fillcolor='rgba(218, 165, 32, 0.06)'
+    ))
+
+    fig.update_layout(
+        height=260,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(
+            showgrid=True,
+            gridcolor='rgba(200, 200, 200, 0.2)',
+            title=""
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor='rgba(200, 200, 200, 0.2)',
+            title="€ / Liter",
+            tickformat=".3f"
+        ),
+        hovermode="x unified"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
     with st.expander("View Raw Historical Data Table"):
-        st.dataframe(df_hist.sort_index(ascending=False), width=1200)
+        st.dataframe(df_hist.sort_values(by='date', ascending=False), width=1200)
 
 st.caption("Disclaimer: This platform provides data-driven statistical market trend forecasts based on public market indicators and official FOD Finance threshold formulas. It does not constitute financial or commercial advice.")
 
