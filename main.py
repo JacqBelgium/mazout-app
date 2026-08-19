@@ -3,6 +3,10 @@ import pandas as pd
 import sqlite3
 from datetime import datetime
 import streamlit as st
+import socket
+
+# Zet de algemene netwerk-timeout op 3 seconden zodat Streamlit nooit blijft hangen
+socket.setdefaulttimeout(3)
 
 @st.cache_data(ttl=3600)
 def fetch_market_data():
@@ -10,8 +14,9 @@ def fetch_market_data():
         heating_oil = yf.Ticker("HO=F")
         eurusd = yf.Ticker("EURUSD=X")
         
-        df_oil = heating_oil.history(period='3mo')
-        df_eurusd = eurusd.history(period='3mo')
+        # Snel ophalen met beperkte historie om snel antwoord te krijgen
+        df_oil = heating_oil.history(period='5d', timeout=3)
+        df_eurusd = eurusd.history(period='5d', timeout=3)
         
         if df_oil.empty or df_eurusd.empty:
             return None
@@ -23,7 +28,7 @@ def fetch_market_data():
         
         return df
     except Exception as e:
-        print(f"Error fetching market data: {e}")
+        print(f"Yahoo fetch timeout or error: {e}")
         return None
 
 def init_db():
@@ -49,7 +54,6 @@ def run_engine():
     conn = sqlite3.connect('mazout_data.db')
     cursor = conn.cursor()
     
-    # Haal laatst bekende rij op indien aanwezig
     last_row = None
     try:
         cursor.execute("SELECT date, oil_eur_ton, official_belgian_price_liter, predicted_official_liter, advice, status, impact_2000l FROM daily_predictions ORDER BY date DESC LIMIT 1")
@@ -106,6 +110,7 @@ def run_engine():
         return short_term, None, official_price
 
     else:
+        # Als Yahoo blokkeert of time-out geeft, direct terugvallen zonder te haken!
         if last_row:
             conn.close()
             short_term = {
@@ -120,7 +125,6 @@ def run_engine():
             return short_term, None, last_row[2] if last_row[2] else 0.8500
             
         conn.close()
-        # Nood-fallback indien zowel Yahoo als DB leeg zijn
         short_term = {
             'latest_market_liter': 0.6850,
             'latest_eur_ton': 815.0,
