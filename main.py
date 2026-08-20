@@ -73,6 +73,6 @@ def run_engine():
         'delta_per_liter': -0.0050,
         'impact_2000l': -10.00,
         'advice': "WACHTEN / HOLD",
-        'status': "Initiële marktdata geladen. De uurlijkse achtergrond-update ververst automatisch de laatste stand."
+        'status': "Initial market data loaded. The hourly background process automatically refreshes the latest status."
     }
     return short_term, None, 0.8245
