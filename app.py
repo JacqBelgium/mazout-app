@@ -98,7 +98,7 @@ if short_term:
             label="Current Max Price (FOD Finance)",
             value=f"€ {official_price:.4f} / L"
         )
-        impact_val = short_term.get("impact_2000l", short_term.get("delta_per_liter", 0) * 2000)
+ * 2000)
         st.markdown(f"<div style=\'font-size: 0.9rem; font-weight: bold; color: #FF8C00; margin-top: 4px;\'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
         st.markdown(f'<div class="date-subtext">Based Date: {today_date_str}</div>', unsafe_allow_html=True)
         
@@ -108,6 +108,8 @@ if short_term:
             value=f"€ {short_term['predicted_official_liter']:.4f} / L",
             delta=f"{short_term['delta_per_liter']:.4f} €/L"
         )
+        impact_val = short_term.get("impact_2000l", short_term.get("delta_per_liter", 0) * 2000)
+        st.markdown(f"<div style=\'font-size: 0.9rem; font-weight: bold; color: #FF8C00; margin-top: 4px;\'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
