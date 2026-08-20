@@ -112,13 +112,42 @@ if short_term:
     info_msg = f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']} - Initial market data loaded. The hourly background process automatically refreshes the latest status."
     st.info(info_msg)
 
-    # Prijsopbouw / Details Expander
-    with st.expander("🔍 Bekijk Prijsopbouw & Details"):
-        st.write(f"**Ruwe olie / Brent basis:** € {short_term.get('crude_price', 0):.4f} / L")
-        st.write(f"**Berekende schatting per liter:** € {short_term['predicted_official_liter']:.4f} / L")
-        st.write(f"**Huidige officiële max. prijs:** € {official_price:.4f} / L")
-        st.write(f"**Verwachte afwijking (Delta):** {short_term['delta_per_liter']:.4f} €/L")
-        st.write(f"**Impact op bestelling (>2000L):** € {impact_val:.2f}")
+    # Visuele Prijsopbouw Sectie (Open op de pagina)
+    st.subheader("📊 Price Breakdown & Components")
+    
+    b_col1, b_col2 = st.columns([1, 1])
+    
+    with b_col1:
+        categories = ['Crude Basis', 'Predicted Max', 'Current Max']
+        values = [
+            short_term.get('crude_price', 0),
+            short_term['predicted_official_liter'],
+            official_price
+        ]
+        
+        fig_bars = go.Figure(go.Bar(
+            x=values,
+            y=categories,
+            orientation='h',
+            marker=dict(color='#1E88E5'),
+            text=[f"€ {v:.4f}" for v in values],
+            textposition='auto'
+        ))
+        fig_bars.update_layout(
+            height=220,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(title="€ / Liter", showgrid=True),
+            yaxis=dict(autorange="reversed")
+        )
+        st.plotly_chart(fig_bars, use_container_width=True)
+        
+    with b_col2:
+        st.markdown("### Specifications")
+        st.write(f"• **Ruwe Olie Basis:** € {short_term.get('crude_price', 0):.4f} / L")
+        st.write(f"• **Huidige Max. Prijs (FOD):** € {official_price:.4f} / L")
+        st.write(f"• **Schatting (1–3 Dagen):** € {short_term['predicted_official_liter']:.4f} / L")
+        st.write(f"• **Mogelijke Afwijking:** {short_term['delta_per_liter']:.4f} €/L")
+        st.write(f"• **Impact (>2000L Bestelling):** € {impact_val:.2f}")
 
 
 conn = sqlite3.connect('mazout_data.db')
