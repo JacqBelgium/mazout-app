@@ -104,40 +104,11 @@ if short_term:
         
     with col3:
         st.metric(
-            label="Estimated Price (1–3 Days)",
-            value=f"€ {short_term['predicted_official_liter']:.4f} / L",
-            delta=f"{short_term['delta_per_liter']:.4f} €/L"
+            label="Advice",
+            value=short_term['advice']
         )
-        impact_val = short_term.get("impact_2000l", short_term.get("delta_per_liter", 0) * 2000)
-        st.markdown(f"<div style=\'font-size: 0.9rem; font-weight: bold; color: #FF8C00; margin-top: 4px;\'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Financial Impact Box
-
-    if is_weekend:
-        st.warning("📅 **Weekend Notice:** FOD Finance does not update official prices on weekends. The trend below predicts the expected price adjustment for **Monday morning** based on Friday's market closing prices.")
-
-    st.markdown("---")
-    
-    # Trend Outlook
-    trend_title = short_term['advice'].replace("WACHTEN / HOLD", "HOLD / EXPECTED PRICE DROP").replace("NU KOPEN / BUY NOW", "EXPECTED PRICE INCREASE").replace("NEUTRAAL", "STABLE / NEUTRAL")
-    
-    status_en = short_term['status']
-    status_en = status_en.replace("Prijsdaling verwacht van ca.", "Expected price drop of approx.")
-    status_en = status_en.replace("over 1-3 dagen. Wacht nog even met bestellen! Je bespaart ca.", "over 1-3 days. Potential savings of approx.")
-    status_en = status_en.replace("op 2.000 liter.", "on a 2,000-liter order.")
-    status_en = status_en.replace("Prijsstijging verwacht van ca.", "Expected price increase of approx.")
-    status_en = status_en.replace("Bestel vandaag of morgen om ca.", "Order in time to save approx.")
-    status_en = status_en.replace("te besparen op 2.000 liter.", "on a 2,000-liter order.")
-    status_en = status_en.replace("Stabiele markt. Geen significante prijsaanpassing verwacht de komende 48 uur (verandering valt binnen de wettelijke FOD-drempelwaarde).", 
-                                  "Stable market. No significant official price adjustment expected within the next 48 hours (fluctuations remain within the legal FOD threshold).")
-
-    if "HOLD" in short_term['advice'] or "WACHTEN" in short_term['advice']:
-        st.success(f"### ⏳ Short-Term Trend Outlook (1–3 Days): {trend_title}\n\n{status_en}")
-    elif "KOPEN" in short_term['advice'] or "BUY" in short_term['advice']:
-        st.error(f"### 📈 Short-Term Trend Outlook (1–3 Days): {trend_title}\n\n{status_en}")
-    else:
+        impact_val = short_term.get('impact_2000l', short_term.get('delta_per_liter', 0) * 2000)
+        st.markdown(f"<div style='font-size: 0.9rem; font-weight: bold; color: #FF8C00; margin-top: 4px;'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
         st.info(f"### ⚖️ Short-Term Trend Outlook (1–3 Days): {trend_title}\n\n{status_en}")
 
 # 5. Price Breakdown Section
