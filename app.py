@@ -84,18 +84,22 @@ today_date_str = datetime.now().strftime('%d-%m-%Y')
 is_weekend = datetime.now().weekday() >= 5
 
 if short_term:
-    # Verwijder eventuele debug weergave
     crude_val = short_term.get('latest_market_liter', 0.0)
     
-    # Probeer datum op te halen uit beschikbare variabelen, anders Vandaag
-    as_of_date_val = short_term.get('as_of_date') or (official_data.get('date') if 'official_data' in locals() and isinstance(official_data, dict) else None) or "Vandaag"
+    # Dynamische datum van vandaag in ISO-formaat (YYYY-MM-DD)
+    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    as_of_date_val = short_term.get('as_of_date') or today_str
 
     col1, col2, col3 = st.columns(3)
+
+    # Bepaal delta voor crude indien beschikbaar, anders vergelijking met schatting
+    crude_delta = short_term.get('crude_delta', short_term.get('delta_per_liter', 0.0))
 
     with col1:
         st.metric(
             label="Market Crude Value (excl. tax)",
-            value=f"€ {crude_val:.4f} / L"
+            value=f"€ {crude_val:.4f} / L",
+            delta=f"{crude_delta:.4f} €/L"
         )
         st.caption(" ")
 
