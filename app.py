@@ -98,6 +98,8 @@ if short_term:
             label="Current Max Price (FOD Finance)",
             value=f"€ {official_price:.4f} / L"
         )
+        impact_val = short_term.get("impact_2000l", short_term.get("delta_per_liter", 0) * 2000)
+        st.markdown(f"<div style=\'font-size: 0.9rem; font-weight: bold; color: #FF8C00; margin-top: 5px;\'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
         st.markdown(f'<div class="date-subtext">Based Date: {today_date_str}</div>', unsafe_allow_html=True)
         
     with col3:
@@ -110,7 +112,7 @@ if short_term:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Financial Impact Box
-    st.info(f"💰 **Estimated Impact on Standard Order (>2,000 liters):** **€ {short_term['impact_2000l']:.2f}**")
+    :** **€ {short_term['impact_2000l']:.2f}**")
 
     if is_weekend:
         st.warning("📅 **Weekend Notice:** FOD Finance does not update official prices on weekends. The trend below predicts the expected price adjustment for **Monday morning** based on Friday's market closing prices.")
