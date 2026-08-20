@@ -112,7 +112,6 @@ if short_term:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Financial Impact Box
- (>2,000 liters):** **€ {short_term['impact_2000l']:.2f}**")
 
     if is_weekend:
         st.warning("📅 **Weekend Notice:** FOD Finance does not update official prices on weekends. The trend below predicts the expected price adjustment for **Monday morning** based on Friday's market closing prices.")
