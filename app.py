@@ -112,6 +112,15 @@ if short_term:
     info_msg = f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']} - Initial market data loaded. The hourly background process automatically refreshes the latest status."
     st.info(info_msg)
 
+    # Prijsopbouw / Details Expander
+    with st.expander("🔍 Bekijk Prijsopbouw & Details"):
+        st.write(f"**Ruwe olie / Brent basis:** € {short_term.get('crude_price', 0):.4f} / L")
+        st.write(f"**Berekende schatting per liter:** € {short_term['predicted_official_liter']:.4f} / L")
+        st.write(f"**Huidige officiële max. prijs:** € {official_price:.4f} / L")
+        st.write(f"**Verwachte afwijking (Delta):** {short_term['delta_per_liter']:.4f} €/L")
+        st.write(f"**Impact op bestelling (>2000L):** € {impact_val:.2f}")
+
+
 conn = sqlite3.connect('mazout_data.db')
 df_hist = pd.read_sql_query("SELECT date, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
 conn.close()
