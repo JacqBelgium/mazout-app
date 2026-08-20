@@ -112,50 +112,43 @@ if short_term:
     info_msg = f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']} - Initial market data loaded. The hourly background process automatically refreshes the latest status."
     st.info(info_msg)
 
-    # Verticale Prijsopbouw Sectie (FOD Max Prijs Structuur)
-    st.subheader("📊 Prijsopbouw & Specificatie (FOD Max Prijs)")
+    # Prijsopbouw Sectie
+    st.subheader("📊 Prijsopbouw & Specificatie")
     
-    # Berekening globale componenten voor de opbouw
-    product_base = short_term.get('crude_price', 0)
-    
-    # Schatting marge & accijnzen vs btw opbouw
+    crude_val = short_term.get('crude_price', 0)
     price_excl_vat = official_price / 1.21
-    vat_amount = official_price - price_excl_vat
-    distribution_excise = max(0.0, price_excl_vat - product_base)
+    vat_val = official_price - price_excl_vat
+    margin_excise_val = max(0.0, price_excl_vat - crude_val)
 
     b_col1, b_col2 = st.columns([1.2, 1])
     
     with b_col1:
-        # Verticale staafdiagrammen voor de prijsopbouw
-        categories = ['Basis Product', 'Marge & Accijnzen', 'BTW (21%)', 'Totaal FOD Max']
-        values = [product_base, distribution_excise, vat_amount, official_price]
-        colors = ['#1565C0', '#1E88E5', '#64B5F6', '#0D47A1']
+        categories = ['Crude Basis', 'Marge & Taksen', 'BTW (21%)', 'FOD Max Prijs']
+        values = [crude_val, margin_excise_val, vat_val, official_price]
         
         fig_vertical = go.Figure(go.Bar(
             x=categories,
             y=values,
-            marker=dict(color=colors),
+            marker=dict(color=['#1E88E5', '#42A5F5', '#90CAF9', '#0D47A1']),
             text=[f"€ {v:.4f}" for v in values],
             textposition='auto'
         ))
         fig_vertical.update_layout(
-            height=320,
-            margin=dict(l=10, r=10, t=20, b=10),
+            height=300,
+            margin=dict(l=10, r=10, t=10, b=10),
             yaxis=dict(title="€ / Liter", showgrid=True),
-            xaxis=dict(title="Prijscomponenten"),
+            xaxis=dict(title=""),
             showlegend=False
         )
         st.plotly_chart(fig_vertical, use_container_width=True)
         
     with b_col2:
         st.markdown("### Specificatie per Liter")
-        st.write(f"• **Basis Productprijs (excl. taks):** € {product_base:.4f} / L")
-        st.write(f"• **Distrib. & Accijnzen (geschat):** € {distribution_excise:.4f} / L")
-        st.write(f"• **Subtotaal excl. BTW:** € {price_excl_vat:.4f} / L")
-        st.write(f"• **BTW (21%):** € {vat_amount:.4f} / L")
-        st.markdown("---")
+        st.write(f"• **Market Crude Basis (excl. tax):** € {crude_val:.4f} / L")
+        st.write(f"• **Marge & Accijnzen (geschat):** € {margin_excise_val:.4f} / L")
+        st.write(f"• **Subtotaal (excl. BTW):** € {price_excl_vat:.4f} / L")
+        st.write(f"• **BTW (21%):** € {vat_val:.4f} / L")
         st.write(f"• **Officiële FOD Maximumprijs:** **€ {official_price:.4f} / L**")
-        st.write(f"• **Prognose (1–3 Dagen):** € {short_term['predicted_official_liter']:.4f} / L")
 
 
 conn = sqlite3.connect('mazout_data.db')
