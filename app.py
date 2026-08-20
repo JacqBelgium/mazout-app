@@ -87,7 +87,7 @@ if short_term:
     crude_val = short_term.get('latest_market_liter', 0.0)
     
     # Dynamische datum van vandaag in ISO-formaat (YYYY-MM-DD)
-    today_str = datetime.date.today().strftime('%Y-%m-%d')
+    today_str = datetime.now().strftime('%Y-%m-%d') if hasattr(datetime, 'now') else str(datetime.today()).split(' ')[0]
     as_of_date_val = short_term.get('as_of_date') or today_str
 
     col1, col2, col3 = st.columns(3)
