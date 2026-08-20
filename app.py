@@ -84,6 +84,7 @@ today_date_str = datetime.now().strftime('%d-%m-%Y')
 is_weekend = datetime.now().weekday() >= 5
 
 if short_term:
+    st.write('🔍 DEBUG short_term inhoud:', short_term)
     col1, col2, col3 = st.columns(3)
 
     # Ophalen van variabelen met fallbacks voor sleutelnamen
