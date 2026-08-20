@@ -72,7 +72,7 @@ st.markdown("""
 st.markdown("""
     <div class="vandersteen-full-header">
         <h1>🛢️ Belgian Heating Oil Price Trends</h1>
-        <p>Maximum Consumer Price by FOD Finance, plus estimated trend based on independent analysis of heating oil prices based on international exchanges.</p>
+        <p></p>
     </div>
 """, unsafe_allow_html=True)
 
