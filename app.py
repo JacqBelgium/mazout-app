@@ -109,11 +109,8 @@ if short_term:
         impact_val = short_term.get('impact_2000l', short_term.get('delta_per_liter', 0) * 2000)
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: bold; color: #FF8C00; margin-top: -4px;'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
 
-    info_text = '⏳ **Short-Term Trend Outlook (1–3 Days):** ' + str(short_term['advice']) + '
-
-Initial market data loaded. The hourly background process automatically refreshes the latest status.'
-    st.info(info_text)
-
+    info_msg = f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']} - Initial market data loaded. The hourly background process automatically refreshes the latest status."
+    st.info(info_msg)
 
 conn = sqlite3.connect('mazout_data.db')
 df_hist = pd.read_sql_query("SELECT date, official_belgian_price_liter FROM daily_predictions ORDER BY date ASC", conn)
