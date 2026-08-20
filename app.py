@@ -109,7 +109,8 @@ if short_term:
         impact_val = short_term.get('impact_2000l', short_term.get('delta_per_liter', 0) * 2000)
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: bold; color: #FF8C00; margin-top: -4px;'>Impact >2000 liters: € {impact_val:.2f}</div>", unsafe_allow_html=True)
 
-    st.info(f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']}
+    msg = f"⏳ **Short-Term Trend Outlook (1–3 Days):** {short_term['advice']}\n\nInitial market data loaded. The hourly background process automatically refreshes the latest status."
+    st.info(msg)
 
 Initial market data loaded. The hourly background process automatically refreshes the latest status.")
 
