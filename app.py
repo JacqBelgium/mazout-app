@@ -84,17 +84,18 @@ today_date_str = datetime.now().strftime('%d-%m-%Y')
 is_weekend = datetime.now().weekday() >= 5
 
 if short_term:
-    st.write('🔍 DEBUG short_term inhoud:', short_term)
-    col1, col2, col3 = st.columns(3)
+    # Verwijder eventuele debug weergave
+    crude_val = short_term.get('latest_market_liter', 0.0)
+    
+    # Probeer datum op te halen uit beschikbare variabelen, anders Vandaag
+    as_of_date_val = short_term.get('as_of_date') or (official_data.get('date') if 'official_data' in locals() and isinstance(official_data, dict) else None) or "Vandaag"
 
-    # Ophalen van variabelen met fallbacks voor sleutelnamen
-    crude_val = short_term.get('crude_price') or short_term.get('crude') or short_term.get('brent') or 0.0
-    as_of_date_val = short_term.get('as_of_date') or short_term.get('date') or short_term.get('price_date') or 'N/A'
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric(
             label="Market Crude Value (excl. tax)",
-            value=f"€ {crude_val:.4f} / L" if crude_val > 0 else "Niet beschikbaar"
+            value=f"€ {crude_val:.4f} / L"
         )
         st.caption(" ")
 
