@@ -86,10 +86,14 @@ is_weekend = datetime.now().weekday() >= 5
 if short_term:
     col1, col2, col3 = st.columns(3)
 
+    # Ophalen van variabelen met fallbacks voor sleutelnamen
+    crude_val = short_term.get('crude_price') or short_term.get('crude') or short_term.get('brent') or 0.0
+    as_of_date_val = short_term.get('as_of_date') or short_term.get('date') or short_term.get('price_date') or 'N/A'
+
     with col1:
         st.metric(
             label="Market Crude Value (excl. tax)",
-            value=f"€ {short_term.get('crude_price', 0):.4f} / L"
+            value=f"€ {crude_val:.4f} / L" if crude_val > 0 else "Niet beschikbaar"
         )
         st.caption(" ")
 
@@ -98,7 +102,7 @@ if short_term:
             label="Current Max Price (FOD Finance)",
             value=f"€ {official_price:.4f} / L"
         )
-        st.caption(f"Based Date: {short_term.get('as_of_date', 'N/A')}")
+        st.caption(f"Based Date: {as_of_date_val}")
 
     with col3:
         st.metric(
@@ -115,7 +119,6 @@ if short_term:
     # Prijsopbouw Sectie
     st.subheader("📊 Prijsopbouw & Specificatie")
     
-    crude_val = short_term.get('crude_price', 0)
     price_excl_vat = official_price / 1.21
     vat_val = official_price - price_excl_vat
     margin_excise_val = max(0.0, price_excl_vat - crude_val)
